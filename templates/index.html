@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GPT-2 Text Generation</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+    <div class="chat-container">
+        <div class="header">
+            <div class="logo">GPT-2 Text Generation</div>
+        </div>
+        <div class="chat-box" id="output"></div>
+        <div class="input-area">
+            <textarea id="prompt" rows="2" placeholder="Type your message here..."></textarea>
+            <button id="generate-text">Generate</button>
+            <div class="loader" id="loader" style="display: none;"></div>
+        </div>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            function fetchConversation() {
+                $.ajax({
+                    url: '/conversation',
+                    type: 'GET',
+                    success: function(response) {
+                        let conversation = response;
+                        let outputDiv = $('#output');
+                        outputDiv.empty();
+                        conversation.forEach(item => {
+                            outputDiv.append('<div class="message user"><b>You:</b><br>' + item.user + '</div>');
+                            outputDiv.append('<div class="message bot"><b>Bot:</b><br>' + item.bot + '</div>');
+                        });
+                    },
+                    error: function() {
+                        $('#output').append('<div class="error">Error fetching conversation history.</div>');
+                    }
+                });
+            }
+
+            fetchConversation();
+
+            $('#generate-text').click(function() {
+                const prompt = $('#prompt').val();
+                $('#loader').show();  // Show the loading indicator
+                $.ajax({
+                    url: '/generate',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ prompt: prompt }),
+                    success: function(response) {
+                        if (response.error) {
+                            $('#output').append('<div class="error">Error: ' + response.error + '</div>');
+                        } else {
+                            $('#output').append('<div class="message user"><b>You:</b><br>' + prompt + '</div>');
+                            $('#output').append('<div class="message bot"><b>Bot:</b><br>' + response.text + '</div>');
+                        }
+                        $('#loader').hide();  // Hide the loading indicator
+                    },
+                    error: function() {
+                        $('#output').append('<div class="error">Error generating response.</div>');
+                        $('#loader').hide();  // Hide the loading indicator in case of error
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
